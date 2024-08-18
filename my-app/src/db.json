@@ -16,9 +16,14 @@
       "completed": true
     },
     {
-      "text": "Встретиться с другом",
+      "text": "Встретиться с друзьями",
       "completed": false,
       "id": "Tf3ySud"
+    },
+    {
+      "text": "Пообедать с коллегой",
+      "completed": false,
+      "id": "yqsEkkh"
     }
   ]
 }

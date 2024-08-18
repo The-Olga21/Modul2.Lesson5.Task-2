@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 
 export const App = () => {
@@ -11,10 +11,23 @@ export const App = () => {
 	const [searchTodo, setSearchTodo] = useState('');
 	const [isSortingEnabled, setIsSortingEnabled] = useState(false);
 	const [newTodoText, setNewTodoText] = useState('');
+	const [changingTaskID, setChangingTaskID] = useState('');
 
 	const refreshTodos = () => setRefreshTodosFlag(!refreshTodosFlag);
 
-	const filteredTodos = todos.filter((todo) => todo.text.includes(searchTodo));
+	const filteredTodos = searchTodo
+		? todos.filter((todo) => todo.text.toLowerCase().includes(searchTodo))
+		: isSortingEnabled
+			? [...todos].sort((a, b) => {
+					if (a.text.toLowerCase() < b.text.toLowerCase()) {
+						return -1;
+					}
+					if (a.text.toLowerCase() > b.text.toLowerCase()) {
+						return 1;
+					}
+					return 0;
+				})
+			: todos;
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -26,30 +39,6 @@ export const App = () => {
 			})
 			.finally(() => setIsLoading(false));
 	}, [refreshTodosFlag]);
-
-	const onSortingChange = () => {
-		setIsSortingEnabled(!isSortingEnabled);
-		console.log(isSortingEnabled);
-
-		if (!isSortingEnabled) {
-			const sortedTodos = [...filteredTodos];
-			sortedTodos.sort((a, b) => {
-				if (a.text.toLowerCase() < b.text.toLowerCase()) {
-					return -1;
-				}
-				if (a.text.toLowerCase() > b.text.toLowerCase()) {
-					return 1;
-				}
-				return 0;
-			});
-			setTodos(sortedTodos);
-			console.log('sortedTodos:', sortedTodos, 'filteredTodos:', filteredTodos);
-		} else if (isSortingEnabled) {
-			setTodos(filteredTodos);
-
-			console.log('filteredTodos:', filteredTodos);
-		}
-	};
 
 	const addTodo = (event) => {
 		event.preventDefault();
@@ -90,13 +79,9 @@ export const App = () => {
 				refreshTodos();
 			});
 	};
-	const onUpdating = (id) => {
-		setIsEdit(true);
-	};
 
 	const onSubmit = (id, event) => {
-		event.preventDefault();
-
+		setIsEdit(true);
 		let url = 'http://localhost:3002/todos/';
 		let newUrl = url + `/${id}`;
 		fetch(newUrl, {
@@ -135,6 +120,7 @@ export const App = () => {
 	if (isLoading) {
 		return <div className={styles.loader}></div>;
 	}
+
 	return (
 		<div className={styles.app}>
 			<form className={styles.todoForm} onSubmit={(event) => addTodo(event)}>
@@ -161,7 +147,7 @@ export const App = () => {
 				className={styles.sortingTodos}
 				type="checkbox"
 				checked={isSortingEnabled}
-				onChange={({ target }) => onSortingChange(target.checked)}
+				onChange={() => setIsSortingEnabled(!isSortingEnabled)}
 			/>
 			<div className={styles.todoList}>
 				{filteredTodos.map(({ id, text, completed }) => (
@@ -180,7 +166,7 @@ export const App = () => {
 									}
 								/>
 								<div className={styles.todo}>
-									{isEdit ? (
+									{changingTaskID === id ? (
 										<input
 											className={styles.todoItemInput}
 											id={id}
@@ -197,7 +183,7 @@ export const App = () => {
 							</div>
 							<button
 								type="button"
-								onClick={(e) => onUpdating(id)}
+								onClick={(e) => setChangingTaskID(id)}
 								className={styles.editTodoButton}
 							>
 								Редактировать
